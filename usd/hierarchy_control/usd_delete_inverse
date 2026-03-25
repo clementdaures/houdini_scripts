@@ -3,7 +3,6 @@ from pxr import Sdf, Usd
 node = hou.pwd()
 ctrl = hou.node("..")
 
-# Get the list of paths to keep
 sources = [s.strip() for s in ctrl.parm("source_paths").eval().split()]
 stage = node.editableStage()
 
@@ -14,26 +13,20 @@ def isolate_paths(prim, keep_list):
     """
     path_str = str(prim.GetPath())
     
-    # Check if this prim is a target
     is_target = path_str in keep_list
     
-    # Check if this prim is a parent of a target (e.g., /ASSET is parent of /ASSET/geo)
     is_ancestor = any(k.startswith(path_str + "/") for k in keep_list)
     
     if is_target:
-        # It's a match! Ensure it's active.
         prim.SetActive(True)
     elif is_ancestor:
-        # It's a parent of a match. Keep it active and check its children.
         prim.SetActive(True)
         for child in prim.GetChildren():
             isolate_paths(child, keep_list)
     else:
-        # It's not a target and doesn't lead to one. Turn it off.
         prim.SetActive(False)
 
 if sources:
-    # Get all top-level primitives and start the isolation process
     root_prims = stage.GetPseudoRoot().GetChildren()
     for root in root_prims:
         isolate_paths(root, sources)
